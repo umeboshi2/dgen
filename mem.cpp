@@ -206,12 +206,12 @@ uint8_t md::misc_readbyte(uint32_t a)
 		if (a < 0xc00004) {
 			if (a & 0x01)
 				return 0;
-			coo_waiting = 0;
+			vdp.set_command_pending(false);
 			return vdp.readbyte();
 		}
 		/* control */
 		if (a < 0xc00008) {
-			coo_waiting = 0;
+			vdp.set_command_pending(false);
 			if ((a & 0x01) == 0)
 				return coo4;
 			return coo5;
@@ -362,7 +362,7 @@ uint16_t md::misc_readword(uint32_t a)
 		if (a < 0xc00004) {
 			if (a & 0x01)
 				return 0;
-			coo_waiting = 0;
+			vdp.set_command_pending(false);
 			return vdp.readword();
 		}
 		if (a < 0xc00008) {
@@ -407,16 +407,16 @@ void md::misc_writeword(uint32_t a, uint16_t d)
 			if (a & 0x01)
 				return;
 			vdp.writeword(d);
-			coo_waiting = 0;
+			vdp.set_command_pending(false);
 			return;
 		}
 		if (a < 0xc00008) {
 			if (a & 0x01)
 				return;
-			if (coo_waiting) {
+			if (vdp.get_command_pending()) {
 				/* completed the vdp command */
-				vdp.command(d, coo_waiting);
-				coo_waiting = 0;
+				vdp.command(d);
+				vdp.set_command_pending(false);
 				return;
 			}
 			// Register write.
@@ -441,8 +441,8 @@ void md::misc_writeword(uint32_t a, uint16_t d)
 				return;
 			} else {
 				/* first 16 bit of command word */
-				vdp.command(d, coo_waiting);
-				coo_waiting = 1;
+				vdp.command(d);
+				vdp.set_command_pending(true);
 				return;
 			}
 		}
@@ -450,7 +450,6 @@ void md::misc_writeword(uint32_t a, uint16_t d)
 	/* else pass onto writebyte */
 	misc_writebyte(a, (d >> 8));
 	misc_writebyte((a + 1), (d & 0xff));
-	//coo_waiting = 0;
 }
 
 #ifdef WITH_MUSA
