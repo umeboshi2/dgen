@@ -298,3 +298,20 @@ bool md_vdp::get_command_pending()
 {
   return (command_pending);
 }
+
+// write away a vdp register
+void md_vdp::write_reg(uint8_t addr, uint8_t data)
+{
+  uint8_t byt, bit;
+
+  // store dirty information down to 1 byte level in bits
+  if (reg[addr] != data) {
+    byt = addr;
+    bit = (byt & 7);
+    byt >>= 3;
+    byt &= 0x03;
+    dirt[(0x30 + byt)] |= (1 << bit);
+    dirt[0x34] |= 8;
+  }
+  reg[addr] = data;
+}

@@ -158,6 +158,7 @@ public:
   void draw_scanline(struct bmap *bits, int line);
   void set_command_pending(bool f);
   bool get_command_pending();
+  void write_reg(uint8_t addr, uint8_t data);
 };
 
 /* Generic structures for dumping and restoring M68K and Z80 states. */

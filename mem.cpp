@@ -413,8 +413,8 @@ void md::misc_writeword(uint32_t a, uint16_t d)
 		if (a < 0xc00008) {
 			if (a & 0x01)
 				return;
+			// Second half of a VDP command
 			if (vdp.get_command_pending()) {
-				/* completed the vdp command */
 				vdp.command(d);
 				vdp.set_command_pending(false);
 				return;
@@ -422,22 +422,7 @@ void md::misc_writeword(uint32_t a, uint16_t d)
 			// Register write.
 			if ((d & 0xc000) == 0x8000) {
 				uint8_t addr = ((d >> 8) & 0x1f);
-
-				if (vdp.reg[addr] != (d & 0xff)) {
-					uint8_t byt, bit;
-
-					/*
-					  store dirty information down to
-					  1 byte level in bits
-					*/
-					byt = addr;
-					bit = (byt & 7);
-					byt >>= 3;
-					byt &= 0x03;
-					vdp.dirt[(0x30 + byt)] |= (1 << bit);
-					vdp.dirt[0x34] |= 8;
-				}
-				vdp.reg[addr] = (d & 0xff);
+				vdp.write_reg(addr, d);
 				return;
 			} else {
 				/* first 16 bit of command word */
