@@ -1,5 +1,9 @@
 // DGen v1.13+
 // Megadrive's VDP C++ module
+//
+// A useful resource for the Genesis VDP:
+// http://cgfm2.emuviews.com/txt/genvdp.txt
+// Thanks to Charles MacDonald for writing these docs.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -172,7 +176,32 @@ unsigned char md_vdp::readbyte()
   return result;
 }
 
-
+/*
+ * VDP commands
+ *
+ * A VDP command is 32-bits in length written into the control port
+ * as two 16-bit words. The VDP maintains a pending flag so that it knows
+ * what to expect next.
+ *
+ *  CD1 CD0 A13 A12 A11 A10 A09 A08     (D31-D24)
+ *  A07 A06 A05 A04 A03 A02 A01 A00     (D23-D16)
+ *   ?   ?   ?   ?   ?   ?   ?   ?      (D15-D8)
+ *  CD5 CD4 CD3 CD2  ?   ?  A15 A14     (D7-D0)
+ *
+ * Where CD* indicates which ram is read or written in subsequent
+ * data port read/writes. A* is an address.
+ *
+ * Note that the command is not cached, but rather, the lower 14 address bits
+ * are commited as soon as the first half of the command arrives. Then when
+ * the second word arrives, the remaining two address bits are commited.
+ *
+ * It is possible to cancel (but not roll back) a pending command by:
+ *  - reading or writing to the data port.
+ *  - reading the control port.
+ *
+ * In these cases the pending flag is cleared, and the first half of
+ * the command remains comitted.
+ */
 int md_vdp::command(uint16_t cmd)
 {
   if (get_command_pending()) // If this is the second word of a command
@@ -189,7 +218,6 @@ int md_vdp::command(uint16_t cmd)
 
     // if CD5 == 1
     rw_dma = ((cmd & 0x80) == 0x80);
-
   }
   else // This is the first word of a command
   {
@@ -226,7 +254,7 @@ int md_vdp::command(uint16_t cmd)
         }
       break;
       case 2:
-        // Done later on
+        // Done later on (VRAM fill I believe)
       break;
       case 3:
         for (i=0;i<len;i++)
