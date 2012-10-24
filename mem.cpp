@@ -211,6 +211,7 @@ uint8_t md::misc_readbyte(uint32_t a)
 		}
 		/* control */
 		if (a < 0xc00008) {
+			coo_waiting = 0;
 			if ((a & 0x01) == 0)
 				return coo4;
 			return coo5;
@@ -406,6 +407,7 @@ void md::misc_writeword(uint32_t a, uint16_t d)
 			if (a & 0x01)
 				return;
 			vdp.writeword(d);
+			coo_waiting = 0;
 			return;
 		}
 		if (a < 0xc00008) {
@@ -448,7 +450,7 @@ void md::misc_writeword(uint32_t a, uint16_t d)
 	/* else pass onto writebyte */
 	misc_writebyte(a, (d >> 8));
 	misc_writebyte((a + 1), (d & 0xff));
-	coo_waiting = 0;
+	//coo_waiting = 0;
 }
 
 #ifdef WITH_MUSA
