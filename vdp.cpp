@@ -218,6 +218,8 @@ int md_vdp::command(uint16_t cmd)
 
     // if CD5 == 1
     rw_dma = ((cmd & 0x80) == 0x80);
+
+    set_command_pending(false);
   }
   else // This is the first word of a command
   {
@@ -232,6 +234,9 @@ int md_vdp::command(uint16_t cmd)
     uint16_t CD0_1 = (cmd & 0xc000) >> 12;
     rw_mode = CD0_1;
     rw_dma = 0;
+
+    // we will expect the second half of the command next
+    set_command_pending(true);
 
     return 0;
   }

@@ -416,18 +416,17 @@ void md::misc_writeword(uint32_t a, uint16_t d)
 			// Second half of a VDP command
 			if (vdp.get_command_pending()) {
 				vdp.command(d);
-				vdp.set_command_pending(false);
 				return;
 			}
 			// Register write.
-			if ((d & 0xc000) == 0x8000) {
+			else if ((d & 0xc000) == 0x8000) {
 				uint8_t addr = ((d >> 8) & 0x1f);
 				vdp.write_reg(addr, d);
 				return;
-			} else {
-				/* first 16 bit of command word */
+			} 
+			// first 16 bits of command word
+			else {
 				vdp.command(d);
-				vdp.set_command_pending(true);
 				return;
 			}
 		}
