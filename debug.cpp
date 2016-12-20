@@ -27,6 +27,9 @@ extern "C" {
 #include "debug.h"
 #include "linenoise/linenoise.h"
 
+static void debug_print_hex_buf_to_file(
+    unsigned char *buf, size_t len, size_t addr_label_start, FILE *f);
+
 static const char *debug_context_names[] = {
 	"M68K", "Z80", "YM2612", "SN76489"
 };
@@ -361,6 +364,64 @@ int md::debug_find_wp_z80(uint16_t addr)
 			return i;
 	}
 	return -1;
+}
+
+static void debug_print_hex_buf_to_file(
+    unsigned char *buf, size_t len, size_t addr_label_start, FILE *f)
+{
+	uint32_t		i, done = 0;
+	unsigned char		byte;
+	char			ascii[17], *ap, *hp;
+	char			hdr[60] = "            ";
+	char			hex[] = "0123456789abcdef";
+
+	// header
+	for (i = 0; i < 16; i++) {
+		hp = strchr(hdr, '\0');
+		hp[0] = hex[(addr_label_start + i) % 16];
+		hp[1] = ' ';
+		hp[2] = ' ';
+		hp[3] = '\0';
+	}
+	fprintf(f, "%s\n", hdr);
+
+	// process lines of 16 bytes
+	ap = ascii;
+	for (i = 0; i < len; i++, done++, ap++) {
+
+		if (i % 16 == 0) {
+			ascii[16] = '\0';
+
+			if (i > 0)
+				fprintf(f, " |%s|\n", ascii);
+
+			fprintf(f, "0x%08x: ", (uint32_t) addr_label_start + i);
+			ap = ascii;
+		}
+
+		byte = buf[i];
+		// 0x20 to 0x7e is printable ascii
+		if ((byte >= 0x20) && (byte <= 0x7e))
+			*ap = byte;
+		else
+			*ap = '.';
+
+		fprintf(f, "%02x ",  byte);
+	}
+
+	// make it all line up
+	if (i % 16) {
+		ascii[(i % 16)] = '\0';
+		i = i % 16;
+		while (i <= 15) {
+			fprintf(f, "   ");
+			i++;
+		}
+	}
+
+	// print rest of ascii
+	fprintf(f, " |%s|\n", ascii);
+	fflush(f);
 }
 
 /**
@@ -1141,6 +1202,48 @@ void md::debug_dump_mem(uint32_t addr, uint32_t len)
 }
 
 /**
+ * Pretty print the RAM to the specified filed
+ *
+ * @param addr Start address.
+ * @param len Length (in bytes) to dump.
+ */
+int md::debug_cmd_dump_ram(int n_args, char **args)
+{
+	uint32_t		 i;
+	unsigned char		*buf;
+    char *filename;
+    FILE *f;
+    int len;
+
+    filename = args[0];
+    f = fopen(filename, "w+");
+    if(!f) {
+        printf("Could not open file %s... aborting\n", filename);
+        return 1;
+    }
+
+
+
+    len = 0xffff+1;
+	/* 0xff0000-0xffffff: RAM */
+	buf = (unsigned char *) malloc(len);
+	if (buf == NULL) {
+        printf("Could not allocate buffer for RAM\n");
+		perror("malloc");
+		return 1;
+	}
+
+	for (i = 0; i < len; i++) {
+	    buf[i] = misc_readbyte(0xff0000 + i);
+	}
+
+	debug_print_hex_buf_to_file(buf, len, 0xff0000, f);
+	free(buf);
+
+    return 1;
+}
+
+/**
  * Memory dump (mem) command handler.
  *
  * - If n_args == 1 then args[0] is start address to dump from for
@@ -1551,6 +1654,7 @@ int md::debug_cmd_help(int n_args, char **args)
 	(void) args;
 
 	printf("commands:\n"
+	    "\tX <filename>\t\tDumps RAM to file <filename>\n"
 	    "\tC/cpu <cpu>\t\tswitch to cpu context\n"
 	    "\t-b/-break <#num/addr>\tremove breakpoint for current cpu\n"
 	    "\tb/break <addr>\t\tset breakpoint for current cpu\n"
@@ -2165,6 +2269,7 @@ int md::debug_enter()
  * List of commands.
  */
 const struct md::dgen_debugger_cmd md::debug_cmd_list[] = {
+		{(char *) "X",	1,	&md::debug_cmd_dump_ram},
 		// breakpoints
 		{(char *) "break",	1,	&md::debug_cmd_break},
 		{(char *) "b",		1,	&md::debug_cmd_break},

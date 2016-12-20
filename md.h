@@ -756,6 +756,7 @@ public:
   int debug_cmd_count(int n_args, char **args);
   int debug_cmd_watch(int n_args, char **args);
   int debug_cmd_minus_watch(int n_args, char **args);
+  int debug_cmd_dump_ram(int n_args, char **args);
   // misc
   int debug_enter(void);
   void debug_leave(void);
