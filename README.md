@@ -86,18 +86,21 @@ emcc dgen.bc -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s TOTAL_MEMORY=134217728 -Oz  -
 
 Screen size is initialized.  Error thrown:
 
-```dgen.html:1249 exception thrown: CopyOnLock is not supported for SDL_LockSurface with SDL_HWPALETTE flag setError
+```
+dgen.html:1249 exception thrown: CopyOnLock is not supported for SDL_LockSurface with SDL_HWPALETTE flag setError
 ```
 
 
-Read kripken/emscripten#754
+Read [kripken/emscripten#754](/kripken/emscripten/issues/754).
 
 
-https://www.zophar.net/pdroms/genesis.html
+
+Same errors in both asm.js and wasm builds.
 
 
-same errors in both asm.js and wasm builds.
 
+
+# more notes
 
 Use incoming (as per webassembly.org, added --enable-wasm):
 
@@ -106,6 +109,9 @@ $ cd emsdk
 $ ./emsdk install --enable-wasm --build=Release sdk-incoming-64bit binaryen-master-64bit
 $ ./emsdk activate --build=Release sdk-incoming-64bit binaryen-master-64bit
 ```
+
+https://www.zophar.net/pdroms/genesis.html
+
 
 
 
