@@ -11,6 +11,7 @@ make dgenfont_8x13.cpp
 popd
 pushd musa
 make m68kmake
+popd
 pushd mz80
 make makez80
 popd
